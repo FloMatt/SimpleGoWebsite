@@ -7,45 +7,61 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"github.com/FloMatt/SimpleGoWebsite/pkg/config"
+	"github.com/FloMatt/SimpleGoWebsite/pkg/models"
 )
 
-func RenderTemplate(w http.ResponseWriter, tmpl string) {
-	//create a template cache
-	tc, err := createTemplateCache()
-	if err != nil {
-		log.Fatal(err)
-	}
+var functions = template.FuncMap{}
 
+var app *config.AppConfig
+
+// NewTemplates sets the config for the template package
+func NewTemplates(a *config.AppConfig) {
+	app = a
+}
+
+// CreateTemplateCache reads all the templates from the templates directory and caches them
+// RenderTemplate writes the rendered template to the http.ResponseWriter.
+// It retrieves the template from the app's TemplateCache based on the provided template name (tmpl).
+// If the template is not found in the cache, it logs a fatal error.
+// The template is then executed into a bytes.Buffer, and the buffer's content is written to the http.ResponseWriter.
+// If an error occurs during writing or executing the template, it logs the error and returns.
+func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+
+	var tc map[string]*template.Template
+	if app.UseCache {
+		//get the template cache from app config
+		tc = app.TemplateCache
+	} else {
+		tc, _ = CreateTemplateCache()
+	}
 	//get requested template from cache
 	t, ok := tc[tmpl]
 	if !ok {
-		log.Fatal(err)
+		log.Fatal("couldn't find template")
 	}
 
 	buf := new(bytes.Buffer)
-	err = t.Execute(buf, nil)
-	if err != nil {
-		log.Println(err)
-	}
+	_ = t.Execute(buf, td)
 
 	//render the template
 
-	_, err = buf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 	if err != nil {
 		fmt.Println("Error writing to response: ", err)
-		return
+
 	}
 
 	/*parsedTemplate, _ := template.ParseFiles("./templates/"+tmpl, "./templates/base.layout.tmpl")
-	err := parsedTemplate.Execute(w, nil)
-	if err != nil {
-		fmt.Println("Error parsing template: ", err)
-		return
-	}*/
-
+	  err := parsedTemplate.Execute(w, nil)
+	  if err != nil {
+	      fmt.Println("Error parsing template: ", err)
+	      return
+	  }*/
 }
 
-func createTemplateCache() (map[string]*template.Template, error) {
+func CreateTemplateCache() (map[string]*template.Template, error) {
 	myCache := map[string]*template.Template{}
 	pages, err := filepath.Glob("./templates/*.page.tmpl")
 	if err != nil {
