@@ -21,6 +21,10 @@ func NewTemplates(a *config.AppConfig) {
 	app = a
 }
 
+func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+	return td
+}
+
 // CreateTemplateCache reads all the templates from the templates directory and caches them
 // RenderTemplate writes the rendered template to the http.ResponseWriter.
 // It retrieves the template from the app's TemplateCache based on the provided template name (tmpl).
@@ -43,6 +47,9 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 	}
 
 	buf := new(bytes.Buffer)
+
+	td = AddDefaultData(td)
+
 	_ = t.Execute(buf, td)
 
 	//render the template
