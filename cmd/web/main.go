@@ -4,16 +4,31 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/FloMatt/SimpleGoWebsite/pkg/config"
 	"github.com/FloMatt/SimpleGoWebsite/pkg/handlers"
 	"github.com/FloMatt/SimpleGoWebsite/pkg/render"
+	"github.com/alexedwards/scs/v2"
 )
 
 const portNumber = ":8080"
 
+var app config.AppConfig
+var session *scs.SessionManager
+
 func main() {
-	var app config.AppConfig
+
+	//change this to true when in production
+	app.InProduction = false
+
+	session = scs.New()
+	session.Lifetime = time.Hour * 24
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = app.InProduction
+
+	app.Session = session
 
 	// Initialize the template cache
 	tc, err := render.CreateTemplateCache()
